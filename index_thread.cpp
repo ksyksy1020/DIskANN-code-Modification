@@ -1356,6 +1356,7 @@ template <typename T, typename TagT, typename LabelT> void Index<T, TagT, LabelT
     for (int64_t node_ctr = 0; node_ctr < (int64_t)(visit_order.size()); node_ctr++)
     {
         auto node = visit_order[node_ctr];
+		int tid = omp_get_thread_num();
 
         // Find and add appropriate graph edges
         ScratchStoreManager<InMemQueryScratch<T>> manager(_query_scratch);
@@ -1374,7 +1375,10 @@ template <typename T, typename TagT, typename LabelT> void Index<T, TagT, LabelT
         }
 	//
         auto search_end = std::chrono::high_resolution_clock::now();
-        total_search_prune_ns += std::chrono::duration_cast<std::chrono::nanoseconds>(search_end - search_start).count();
+        if (tid < MAX_THREADS)
+        {
+            total_search_prune_ns_per_thread[tid] += std::chrono::duration_cast<std::chrono::nanoseconds>(search_end - search_start).count();
+        }
 	//
         assert(pruned_list.size() > 0);
 
