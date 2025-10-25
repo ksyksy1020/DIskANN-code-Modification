@@ -1444,15 +1444,15 @@ template <typename T, typename TagT, typename LabelT> void Index<T, TagT, LabelT
 //        diskann::cout << "Total time for bitset::reset():     "
 //                      << (double)total_bs_reset_ns.load() / 1000000000.0 << "s." << std::endl;
         diskann::cout << "--- short array visited list reset  Times ---" << std::endl;
-        diskann::cout << "Total time for VisitedList::reset(): "
-                      << (double)total_vl_reset_ns.load() / 1000000000.0 << "s." << std::endl;
+        diskann::cout << "Average time for VisitedList::reset(): " // "Total" -> "Average"
+                      << get_avg_from_per_thread_ns(total_vl_reset_ns_per_thread) << "s." << std::endl; // 헬퍼 함수 사용
 
 
-	diskann::cout << "--- Total Link() Sub-task Timings ---" << std::endl;
-        diskann::cout << "Total time for search_for_point_and_prune(): "
-                      << (double)total_search_prune_ns.load() / 1000000000.0 << "s." << std::endl;
-        diskann::cout << "Total time for inter_insert():               "
-                      << (double)total_inter_insert_ns.load() / 1000000000.0 << "s." << std::endl;
+        diskann::cout << "--- Average Link() Sub-task Timings (per active thread) ---" << std::endl; // "Total" -> "Average"
+        diskann::cout << "Average time for search_for_point_and_prune(): "
+                      << get_avg_from_per_thread_ns(total_search_prune_ns_per_thread) << "s." << std::endl; // 헬퍼 함수 사용
+        diskann::cout << "Average time for inter_insert():                " // 공백 수정
+                      << get_avg_from_per_thread_ns(total_inter_insert_ns_per_thread) << "s." << std::endl; // 헬퍼 함수 사용
     }
 }
 
