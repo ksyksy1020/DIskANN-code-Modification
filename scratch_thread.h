@@ -18,19 +18,20 @@
 #include "concurrent_queue.h"
 #include "visited_list.h"
 
-
 namespace diskann
 {
 template <typename T> class PQScratch;
-constexpr int MAX_TIMING_THREADS = 128;
+static const int MAX_THREADS = 128;
 //
 // AbstractScratch space for in-memory index based search
 //
 //
-extern std::vector<long long> per_thread_rs_clear_ns;
-extern std::vector<long long> per_thread_bs_reset_ns;
-extern std::vector<long long> per_thread_vl_reset_ns;
+//extern std::atomic<long long> total_rs_clear_ns;
+//extern std::atomic<long long> total_bs_reset_ns;
+//extern std::atomic<long long> total_vl_reset_ns;
 //
+extern std::vector<std::atomic<long long>> total_vl_reset_ns_per_thread;
+
 template <typename T> class InMemQueryScratch : public AbstractScratch<T>
 {
   public:
@@ -38,7 +39,7 @@ template <typename T> class InMemQueryScratch : public AbstractScratch<T>
     InMemQueryScratch(uint32_t search_l, uint32_t indexing_l, uint32_t r, uint32_t maxc, size_t dim, size_t aligned_dim,
                       size_t alignment_factor,size_t total_points, bool init_pq_scratch = false);
     void resize_for_new_L(uint32_t new_search_l);
-    void clear(int thread_id);
+    void clear();
 
     inline hnswlib::VisitedList* visited_list()
     {
@@ -184,8 +185,7 @@ template <typename T> class SSDThreadData
 template <typename T> class ScratchStoreManager
 {
   public:
-    ScratchStoreManager(ConcurrentQueue<T *> &query_scratch, int thread_id)
-    : _scratch_pool(query_scratch), _thread_id(thread_id)
+    ScratchStoreManager(ConcurrentQueue<T *> &query_scratch) : _scratch_pool(query_scratch)
     {
         _scratch = query_scratch.pop();
         while (_scratch == nullptr)
@@ -201,7 +201,7 @@ template <typename T> class ScratchStoreManager
 
     ~ScratchStoreManager()
     {
-        _scratch->clear(_thread_id);
+        _scratch->clear();
         _scratch_pool.push(_scratch);
         _scratch_pool.push_notify_all();
     }
@@ -221,7 +221,6 @@ template <typename T> class ScratchStoreManager
     }
 
   private:
-    int _thread_id;
     T *_scratch;
     ConcurrentQueue<T *> &_scratch_pool;
     ScratchStoreManager(const ScratchStoreManager<T> &);
